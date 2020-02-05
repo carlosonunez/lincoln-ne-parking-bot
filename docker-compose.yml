@@ -1,10 +1,34 @@
 version: '2.2'
 services:
-  parking-bot:
+  ruby:
     build:
+      dockerfile: ruby.Dockerfile
       context: .
     volumes:
       - "$PWD:/app:ro,cached"
     working_dir: /app
     entrypoint: ruby
+    command:
+      - -e
+      - "puts 'Welcome to your service.'"
+  vendor:
+    extends: ruby
+    volumes:
+      - "$PWD:/app:delegated"
+      - "$PWD/vendor:/vendor:delegated"
+      - "$PWD/Gemfile:/Gemfile"
+    command:
+      - -c
+      - "echo 'INFO: Vendoring dependencies...' && bundle install --path /vendor/bundle"
+  vendor-with-test:
+    extends: ruby
+    volumes:
+      - "$PWD:/app:delegated"
+      - "$PWD/vendor:/vendor:delegated"
+      - "$PWD/Gemfile:/Gemfile"
+    command:
+      - -c
+      - "echo 'INFO: Vendoring dependencies...' && bundle install --with test --path /vendor/bundle"
+  parking-bot:
+    extends: ruby
     command: bin/parking_bot.rb
