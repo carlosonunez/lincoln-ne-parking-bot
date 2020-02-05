@@ -6,6 +6,8 @@ services:
       context: .
     volumes:
       - "$PWD:/app:ro,cached"
+    environment:
+      GEM_PATH: "vendor/bundle/ruby/2.5.0"
     working_dir: /app
     entrypoint: ruby
     command:
