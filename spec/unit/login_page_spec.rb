@@ -4,23 +4,23 @@ require 'spec_helper'
 
 describe 'Given a parking bot' do
   before(:each) do
+    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#verify')
     @bot = ParkingBot.new
   end
 
   context 'When I visit the verification page' do
     before(:each) do
-      allow_any_instance_of(Capybara::Session)
-        .to receive(:visit)
-        .with('https://ppprk.com/park/#verify')
-        .and_return(File.read('spec/fixtures/verification_page.html'))
       @bot.go_to_verification_page!
     end
 
-    example 'Then I can enter my phone number' do
-      expect(@bot.session.page.find(:xpath, "//button[contains(text(), 'Text Me')]"))
-        .not_to be_empty
-      expect(@bot.session.page.find(:xpath, "//input[@id='regPhoneNo']"))
-        .not_to be_empty
+    example 'Then I can enter my phone number', :unit do
+      text_me_button = @bot.session.find(:xpath,
+                                         "//button[contains(text(), 'Text Me')]")
+      phone_number_field = @bot.session.find(:xpath,
+                                             "//input[@id='regPhoneNo']")
+      require 'pry'; binding.pry
+      expect(text_me_button.text).to eq 'Text Me'
+      expect(phone_number_field).not_to be_nil
     end
   end
 end

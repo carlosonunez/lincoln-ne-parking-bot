@@ -33,4 +33,3 @@ RSpec.configure do |config|
     SpecHelpers::Aws::DynamoDBLocal.drop_tables!
   end
 end
-
