@@ -17,6 +17,7 @@ services:
       - "$PWD:/app:delegated"
       - "$PWD/vendor:/vendor:delegated"
       - "$PWD/Gemfile:/Gemfile"
+    entrypoint: sh
     command:
       - -c
       - "echo 'INFO: Vendoring dependencies...' && bundle install --path /vendor/bundle"
@@ -26,9 +27,40 @@ services:
       - "$PWD:/app:delegated"
       - "$PWD/vendor:/vendor:delegated"
       - "$PWD/Gemfile:/Gemfile"
+    entrypoint: sh
     command:
       - -c
       - "echo 'INFO: Vendoring dependencies...' && bundle install --with test --path /vendor/bundle"
   parking-bot:
     extends: ruby
     command: bin/parking_bot.rb
+  unit:
+    extends: ruby
+    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    environment:
+      LOAD_PATH: "/app/spec/unit;/app/spec;/app/lib"
+      AWS_DYNAMODB_ENDPOINT_URL: "http://dynamodb:8000"
+      ENVIRONMENT: test
+    command:
+      - --tag
+      - unit
+      - --tag
+      - unit_with_database
+      - --fail-fast
+      - --format
+      - documentation
+  lint:
+    extends: ruby
+    entrypoint: vendor/bundle/ruby/2.5.0/bin/rubocop
+    volumes:
+      - "$PWD:/app:delegated" # need write access so that we can auto-correct
+    environment:
+      LOAD_PATH: "/app/spec/unit;/app/spec;/app/lib"
+      AWS_DYNAMODB_ENDPOINT_URL: "http://dynamodb:8000"
+      ENVIRONMENT: test
+    command:
+      - --auto-correct
+      - --except
+      - Style/Documentation,Style/GlobalVars
+      - lib/**/*.rb
+      - spec
