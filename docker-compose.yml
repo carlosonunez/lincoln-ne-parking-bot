@@ -1,0 +1,10 @@
+version: '2.2'
+services:
+  parking-bot:
+    build:
+      context: .
+    volumes:
+      - "$PWD:/app:ro,cached"
+    working_dir: /app
+    entrypoint: ruby
+    command: bin/parking_bot.rb
