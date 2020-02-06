@@ -26,10 +26,24 @@ describe 'Given a parking bot' do
 
   context 'When I enter my phone number' do
     example "Then I'm asked to enter a verification code", :unit do
+      @bot.go_to_verification_page!
       @bot.provide_phone_number(123)
       verification_code_field =
         @bot.session.find(:xpath, "//input[@id='verificationCode']")
       expect(verification_code_field).not_to be_nil
+    end
+  end
+
+  # The test for actually grabbing verification codes from text messages
+  # is covered in spec/unit/verification_code_spec.rb
+  context 'When I provide a verification code' do
+    example 'Then I am logged in', :unit do
+      @bot.go_to_verification_page!
+      @bot.provide_phone_number(123)
+      @bot.submit_verification_code(123)
+      success_message_text =
+        @bot.session.find(:xpath, "//ul[contains(text(), 'Congratulations!')]")
+      expect(success_message_text).not_to be_nil
     end
   end
 end

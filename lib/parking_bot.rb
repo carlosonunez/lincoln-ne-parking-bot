@@ -17,12 +17,17 @@ class ParkingBot
 
   # Then we need to enter a code
   def provide_phone_number(phone_number)
-    go_to_verification_page!
     @session.fill_in('regPhoneNo', with: phone_number)
     @session.click_button('Text Me')
-    require 'pry'; binding.pry
     @session.click_button('Yes')
   rescue StandardError
     raise 'Failed to provide phone number'
+  end
+
+  def submit_verification_code(code)
+    @session.fill_in('verificationCode', with: code)
+    @session.click_button('Verify')
+  rescue StandardError
+    raise 'Failed to provide verification code.'
   end
 end
