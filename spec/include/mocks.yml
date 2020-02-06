@@ -1,4 +1,5 @@
 ---
 - url: 'https://ppprk.com/park/#verify'
   page: 'verification_page.html'
-
+- url: 'https://ppprk.com/park/#mobileVerification'
+  page: 'code_page.html'
