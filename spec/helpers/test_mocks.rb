@@ -39,13 +39,20 @@ module SpecHelpers
 
     def self.enable_mocked_session!(session)
       extend RSpec::Mocks::ExampleMethods
+
+      allow(Capybara::Session).to receive(:new) { :failure }
       allow(Capybara::Session)
         .to receive(:new)
         .with(:poltergeist)
         .and_return(session)
+      allow(Capybara::Session)
+        .to receive(:new)
+        .with(:poltergeist_test)
+        .and_return(session)
     end
 
     def self.mock_visits!(url)
+      allow_any_instance_of(Capybara::Session).to receive(:visit) { :failure }
       allow_any_instance_of(Capybara::Session)
         .to receive(:visit)
         .with(url)
