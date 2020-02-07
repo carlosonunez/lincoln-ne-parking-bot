@@ -2,6 +2,8 @@
 
 module SpecHelpers
   module TestMocks
+    TEST_MOCKS_FILE = 'spec/include/mocks.yml'
+
     RSpec.configure do |config|
       config.before(:all, integration: true) do
         $api_gateway_url ||= Helpers::Integration::HTTP.fetch_endpoint
@@ -29,6 +31,8 @@ module SpecHelpers
 
     def self.generate_mock_session!(url)
       extend RSpec::Mocks::ExampleMethods
+      raise "No mock for #{url} in #{TEST_MOCKS_FILE}" if find_mock(url).nil?
+
       mocked_page_path = find_mock(url)[:page]
       register_test_driver
       mock_session = Capybara::Session.new :poltergeist_test
@@ -60,7 +64,7 @@ module SpecHelpers
     end
 
     def self.fetch_mocks
-      YAML.safe_load(File.read('spec/include/mocks.yml'), symbolize_names: true)
+      YAML.safe_load(File.read(TEST_MOCKS_FILE), symbolize_names: true)
     end
 
     def self.find_mock(url)
