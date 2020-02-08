@@ -3,3 +3,5 @@
   page: 'verification_page.html'
 - url: 'https://ppprk.com/park/#mobileVerification'
   page: 'code_page.html'
+- url: 'https://ppprk.com/park/#login'
+  page: 'login_page.html'

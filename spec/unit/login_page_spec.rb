@@ -6,6 +6,7 @@ describe 'Given a parking bot' do
   before(:each) do
     SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#verify')
     SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#mobileVerification')
+    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#login')
     @bot = ParkingBot.new
   end
   after(:each) do
@@ -44,6 +45,15 @@ describe 'Given a parking bot' do
       success_message_text =
         @bot.session.find(:xpath, "//ul[contains(text(), 'Congratulations!')]")
       expect(success_message_text).not_to be_nil
+
+  context 'When I provide my PIN' do
+    example 'Then I can start paying for parking', :unit do
+      @bot.go_to_verification_page!
+      @bot.provide_phone_number(123)
+      @bot.submit_verification_code(123)
+      @bot.provide_pin(1234)
+      zone_text = 'Enter the zone number posted at this location:'
+      expect(@bot.session.has_content?('label', zone_text)).to be true
     end
   end
 end
