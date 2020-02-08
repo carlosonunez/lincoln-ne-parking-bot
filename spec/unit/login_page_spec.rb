@@ -16,12 +16,8 @@ describe 'Given a parking bot' do
   context 'When I visit the verification page' do
     example 'Then I can enter my phone number', :unit do
       @bot.go_to_verification_page!
-      text_me_button =
-        @bot.session.find(:xpath, "//button[contains(text(), 'Text Me')]")
-      phone_number_field =
-        @bot.session.find(:xpath, "//input[@id='regPhoneNo']")
-      expect(text_me_button.text).to eq 'Text Me'
-      expect(phone_number_field).not_to be_nil
+      expect(@bot.session.has_button?('Text Me')).to be true
+      expect(@bot.session.has_field?('regPhoneNo')).to be true
     end
   end
 
@@ -29,9 +25,7 @@ describe 'Given a parking bot' do
     example "Then I'm asked to enter a verification code", :unit do
       @bot.go_to_verification_page!
       @bot.provide_phone_number(123)
-      verification_code_field =
-        @bot.session.find(:xpath, "//input[@id='verificationCode']")
-      expect(verification_code_field).not_to be_nil
+      expect(@bot.session.has_field?('verificationCode')).to be true
     end
   end
 
@@ -42,9 +36,9 @@ describe 'Given a parking bot' do
       @bot.go_to_verification_page!
       @bot.provide_phone_number(123)
       @bot.submit_verification_code(123)
-      success_message_text =
-        @bot.session.find(:xpath, "//ul[contains(text(), 'Congratulations!')]")
-      expect(success_message_text).not_to be_nil
+      expect(@bot.session.has_text?('Secure Login')).to be true
+    end
+  end
 
   context 'When I provide my PIN' do
     example 'Then I can start paying for parking', :unit do
