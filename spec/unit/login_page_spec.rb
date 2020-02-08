@@ -5,8 +5,6 @@ require 'spec_helper'
 describe 'Given a parking bot' do
   before(:each) do
     SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#verify')
-    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#mobileVerification')
-    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#login')
     @bot = ParkingBot.new
   end
   after(:each) do
