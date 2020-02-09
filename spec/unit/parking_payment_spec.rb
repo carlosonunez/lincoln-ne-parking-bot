@@ -22,4 +22,11 @@ describe 'Given a parking bot that is logged in' do
       expect { @bot.provide_zone(123) }.not_to raise_error
     end
   end
+
+  context 'When I enter a space ID' do
+    example 'Then I am asked for a length of time to pay', :unit do
+      @bot.provide_zone(123)
+      expect { @bot.provide_space(1234) }.not_to raise_error
+    end
+  end
 end

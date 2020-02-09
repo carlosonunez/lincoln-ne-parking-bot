@@ -12,7 +12,7 @@ class ParkingBot
 
   # First, we need to enter our phone number.
   def go_to_verification_page!
-    @session.visit(Constants::VERIFICATION_LINK)
+    @session.visit(Constants::URL::VERIFICATION)
   end
 
   # Then we need to enter a code
@@ -45,6 +45,14 @@ class ParkingBot
     @session.click_button('Continue')
     raise "Zone invalid: #{zone}" \
       if @session.has_text?(Constants::Errors::ZONE_INVALID)
-    raise 'Unknown error' unless @session.has_text?(Constants::ZONE_PROMPT)
+    raise 'Unknown error' unless @session.has_text?(Constants::Prompts::ZONE)
+  end
+
+  def provide_space(space)
+    @session.fill_in('spaceNumber', with: space)
+    @session.click_button('Next')
+    raise "Space invalid: #{space}" \
+      if @session.has_text?(Constants::Errors::INVALID_SPACE)
+    raise 'Unknown error' unless @session.has_text?(Constants::Prompts::LENGTH)
   end
 end
