@@ -55,4 +55,13 @@ class ParkingBot
       if @session.has_text?(Constants::Errors::INVALID_SPACE)
     raise 'Unknown error' unless @session.has_text?(Constants::Prompts::LENGTH)
   end
+
+  def choose_max_parking_time!
+    raise 'No maximum purchase option available.' \
+      unless @session.has_button?('Max Purchase')
+
+    @session.click_button('Max Purchase')
+    raise 'Unable to select parking time' \
+      unless @session.has_button?('Add Card')
+  end
 end

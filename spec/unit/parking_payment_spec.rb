@@ -29,4 +29,18 @@ describe 'Given a parking bot that is logged in' do
       expect { @bot.provide_space(1234) }.not_to raise_error
     end
   end
+
+  # When I wrote this, I always selected the max amount of time available.
+  # The idea behind this was to be able to pay for parking overnight
+  # without having to wake up at 8am when the meters began collecting.
+  # The only way to specify an arbitrary amount of time is to use a
+  # grid picker to increase time to park in 15 minute increments.
+  # I didn't want to do this.
+  context 'When I select the maximum amount of time available' do
+    example 'Then I am asked to pay', :unit do
+      @bot.provide_zone(123)
+      @bot.provide_space(456)
+      expect { @bot.choose_max_parking_time! }.not_to raise_error
+    end
+  end
 end
