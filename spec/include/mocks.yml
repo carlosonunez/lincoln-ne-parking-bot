@@ -1,3 +1,3 @@
 ---
-- url: 'https://ppprk.com/park/#verify'
-  page: 'verification_page.html'
+- url: 'https://ppprk.com/park/'
+  page: 'welcome_page.html'

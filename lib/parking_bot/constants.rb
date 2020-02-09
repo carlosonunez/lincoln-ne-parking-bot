@@ -6,12 +6,14 @@ class ParkingBot
   # TODO: Make this happen, maybe.
   module Constants
     module URL
-      VERIFICATION = 'https://ppprk.com/park/#verify'
+      LOGIN = 'https://ppprk.com/park/'
     end
+
     module Prompts
       ZONE = 'Enter the space number in zone'
       LENGTH = 'Please select the length of stay'
     end
+
     module Errors
       ZONE_INVALID = "This is not a zone within our system. Please try a \
 different zone before continuing."

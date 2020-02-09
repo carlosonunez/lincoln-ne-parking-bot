@@ -4,11 +4,11 @@ require 'spec_helper'
 
 describe 'Given a parking bot that is logged in' do
   before(:each) do
-    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#verify')
+    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/')
 
     # TODO: Replace with login! when it becomes available.
     @bot = ParkingBot.new
-    @bot.go_to_verification_page!
+    @bot.start_login!
     @bot.provide_phone_number(123)
     @bot.submit_verification_code(123)
     @bot.provide_pin(1234)

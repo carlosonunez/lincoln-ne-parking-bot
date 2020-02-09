@@ -10,12 +10,14 @@ class ParkingBot
     @session = ParkingBot::Session.create
   end
 
-  # First, we need to enter our phone number.
-  def go_to_verification_page!
-    @session.visit(Constants::URL::VERIFICATION)
+  def start_login!
+    @session.visit(Constants::URL::LOGIN)
+    @session.click_link('Get Started')
+    raise 'Unable to start the login process' \
+      unless @session.has_button?('Text Me') &&
+             @session.has_field?('regPhoneNo')
   end
 
-  # Then we need to enter a code
   def provide_phone_number(phone_number)
     @session.fill_in('regPhoneNo', with: phone_number)
     @session.click_button('Text Me')

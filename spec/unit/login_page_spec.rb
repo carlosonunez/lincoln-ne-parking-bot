@@ -4,24 +4,22 @@ require 'spec_helper'
 
 describe 'Given a parking bot' do
   before(:each) do
-    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/#verify')
+    SpecHelpers::TestMocks.generate_mock_session!('https://ppprk.com/park/')
     @bot = ParkingBot.new
   end
   after(:each) do
     @bot = nil
   end
 
-  context 'When I visit the verification page' do
-    example 'Then I can enter my phone number', :unit do
-      @bot.go_to_verification_page!
-      expect(@bot.session.has_button?('Text Me')).to be true
-      expect(@bot.session.has_field?('regPhoneNo')).to be true
+  context 'When I visit the Welcome page' do
+    example 'Then I can enter my number to start the login process', :unit do
+      expect { @bot.start_login! }.not_to raise_error
     end
   end
 
   context 'When I enter my phone number' do
     example "Then I'm asked to enter a verification code", :unit do
-      @bot.go_to_verification_page!
+      @bot.start_login!
       @bot.provide_phone_number(123)
       expect(@bot.session.has_field?('verificationCode')).to be true
     end
@@ -31,7 +29,7 @@ describe 'Given a parking bot' do
   # is covered in spec/unit/verification_code_spec.rb
   context 'When I provide a verification code' do
     example 'Then I am logged in', :unit do
-      @bot.go_to_verification_page!
+      @bot.start_login!
       @bot.provide_phone_number(123)
       @bot.submit_verification_code(123)
       expect(@bot.session.has_text?('Secure Login')).to be true
@@ -40,7 +38,7 @@ describe 'Given a parking bot' do
 
   context 'When I provide my PIN' do
     example 'Then I can start paying for parking', :unit do
-      @bot.go_to_verification_page!
+      @bot.start_login!
       @bot.provide_phone_number(123)
       @bot.submit_verification_code(123)
       @bot.provide_pin(1234)
