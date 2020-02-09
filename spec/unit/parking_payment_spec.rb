@@ -43,4 +43,13 @@ describe 'Given a parking bot that is logged in' do
       expect { @bot.choose_max_parking_time! }.not_to raise_error
     end
   end
+
+  context 'When I select a card to pay with (that I added previously)' do
+    example 'Then I have a parking space!', :unit do
+      @bot.provide_zone(123)
+      @bot.provide_space(456)
+      @bot.choose_max_parking_time!
+      expect { @bot.pay!(card: 'TestCard-1234') }.not_to raise_error
+    end
+  end
 end

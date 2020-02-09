@@ -64,4 +64,16 @@ class ParkingBot
     raise 'Unable to select parking time' \
       unless @session.has_button?('Add Card')
   end
+
+  def pay!(card:)
+    raise "No card exists matching '#{card}'" \
+      unless @session.has_button?(card)
+
+    @session.click_button(card)
+    raise 'Unable to verify the payment' \
+      unless @session.has_text?('Please Confirm')
+
+    @session.click_button('Yes')
+    raise 'Unable to pay' unless @session.has_text?('You are parked!')
+  end
 end
