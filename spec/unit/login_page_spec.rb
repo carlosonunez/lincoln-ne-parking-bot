@@ -48,4 +48,14 @@ describe 'Given a parking bot' do
       expect(@bot.session.has_content?('label', zone_text)).to be true
     end
   end
+
+  context 'When I log in' do
+    # I can't do this one until I set up a pub-sub for getting verification
+    # codes.
+    example 'Then I am logged in', :wip do
+      @bot.login!(phone_number: 1_234_567_890, pin: 1234)
+      zone_text = 'Enter the zone number posted at this location:'
+      expect(@bot.session.has_content?('label', zone_text)).to be true
+    end
+  end
 end

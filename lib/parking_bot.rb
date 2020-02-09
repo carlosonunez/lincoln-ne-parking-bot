@@ -33,12 +33,18 @@ class ParkingBot
   end
 
   def provide_pin(pin)
-    failure_message = 'Either the phone number/email or PIN you entered \
-is incorrect. Please try again'
     @session.fill_in('pin', with: pin)
     @session.click_button('Sign In')
-    raise 'PIN not valid' if @session.has_text?(failure_message)
+    raise 'PIN not valid' if @session.has_text?(Constants::Errors::INVALID_PIN)
   rescue StandardError
     raise 'Something went wrong'
+  end
+
+  def provide_zone(zone)
+    @session.fill_in('zoneNumber', with: zone)
+    @session.click_button('Continue')
+    raise "Zone invalid: #{zone}" \
+      if @session.has_text?(Constants::Errors::ZONE_INVALID)
+    raise 'Unknown error' unless @session.has_text?(Constants::ZONE_PROMPT)
   end
 end
