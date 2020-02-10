@@ -4,6 +4,7 @@ if ! test -d "vendor/bundle" || test "$REVENDOR" == "true"
 then
   docker-compose run --rm vendor
 fi
+docker-compose up -d sqs
 docker-compose run --rm lint
-docker-compose run --rm unit
+docker-compose run --rm unit $*
 docker-compose down

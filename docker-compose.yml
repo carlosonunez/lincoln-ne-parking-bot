@@ -1,5 +1,16 @@
 version: '2.2'
 services:
+  sqs:
+    image: 'motoserver/moto'
+    entrypoint: moto_server
+    ports:
+      - 4567:4567
+    command:
+      - sqs
+      - -p
+      - "4567"
+      - -H
+      - 0.0.0.0
   ruby:
     build:
       dockerfile: ruby.Dockerfile
@@ -41,6 +52,7 @@ services:
     entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
     environment:
       LOAD_PATH: "/app/spec/unit;/app/spec;/app/lib"
+      AWS_SQS_ENDPOINT_URL: "http://sqs:4567"
       AWS_DYNAMODB_ENDPOINT_URL: "http://dynamodb:8000"
       ENVIRONMENT: test
     command:
@@ -48,6 +60,8 @@ services:
       - unit
       - --tag
       - unit_with_database
+      - --tag
+      - unit_with_queue
       - --fail-fast
       - --format
       - documentation
