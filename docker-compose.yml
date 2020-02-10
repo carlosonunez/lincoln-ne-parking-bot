@@ -1,8 +1,10 @@
 version: '2.2'
 services:
-  sqs:
+  moto:
     image: 'motoserver/moto'
     entrypoint: moto_server
+  sqs:
+    extends: moto
     ports:
       - 4567:4567
     command:
@@ -19,6 +21,7 @@ services:
       - "$PWD:/app:ro,cached"
     environment:
       GEM_PATH: "vendor/bundle/ruby/2.5.0"
+      VERIFY_CODE_QUEUE_NAME: "ppprk_verification_codes"
     working_dir: /app
     entrypoint: ruby
     command:
@@ -80,3 +83,10 @@ services:
       - Style/Documentation,Style/GlobalVars
       - lib/**/*.rb
       - spec
+  create_queue:
+    extends: ruby
+    entrypoint: vendor/bundle/ruby/2.5.0/bin/shoryuken
+    command:
+      - sqs
+      - create
+      - ppprk_verification_codes

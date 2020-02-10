@@ -7,15 +7,29 @@ require 'socket'
 module SpecHelpers
   module Aws
     module SQSLocal
+      @sqs_client = nil
+
       def self.start_mocking!
+        check_env!
         unless started?
           raise "Local SQS server not available; start it with \
 docker-compose run --rm sqs"
         end
-        create_mock_client do |client|
-          configure_client(client)
-          configure_server(client)
-        end
+        create_mock_client
+        configure_client
+        configure_server
+      end
+
+      def self.create_queue!(queue_name:)
+        @sqs_client.create_queue(queue_name: queue_name)
+      rescue StandardError
+        raise "Unable to create queue: #{name}"
+      end
+
+      def self.push_test_message!(queue:, message:)
+        Shoryuken::Client.queues(queue).send_message(message)
+      rescue StandardError
+        raise 'Unable to queue test message (did you create the queue)?'
       end
 
       def self.started?
@@ -26,33 +40,35 @@ docker-compose run --rm sqs"
         false
       end
 
-      def self.configure_server(client)
+      def self.configure_server
         Shoryuken.configure_server do |config|
-          config.sqs_client = client
+          config.sqs_client = @sqs_client
         end
       end
 
-      def self.configure_client(client)
+      def self.configure_client
         Shoryuken.configure_client do |config|
-          config.sqs_client = client
+          config.sqs_client = @sqs_client
+        end
+      end
+
+      def self.check_env!
+        %w[AWS_REGION AWS_SQS_ENDPOINT_URL].each do |required_env_var|
+          raise "Set #{required_env_var}" if ENV[required_env_var].nil?
         end
       end
 
       def self.create_mock_client
-        %w[APP_AWS_SECRET_ACCESS_KEY
-           APP_AWS_ACCESS_KEY_ID
-           AWS_SQS_ENDPOINT_URL].each do |required_env_var|
-          raise "Set #{required_env_var}" if ENV[required_env_var].nil?
-        end
-        yield(::Aws::SQS::Client.new(
-          region: 'us-east-1',
-          access_key_id: ENV['APP_AWS_ACCESS_KEY_ID'],
-          secret_access_key: ENV['APP_AWS_SECRET_ACCESS_KEY'],
+        @sqs_client ||= ::Aws::SQS::Client.new(
+          region: ENV['AWS_REGION'],
+          access_key_id: 'fake',
+          secret_access_key: 'fake',
           endpoint: ENV['AWS_SQS_ENDPOINT_URL'],
           verify_checksums: false
-        ))
+        )
       end
 
+      private_class_method :check_env!
       private_class_method :create_mock_client
       private_class_method :configure_server
       private_class_method :configure_client
