@@ -28,16 +28,6 @@ RSpec.configure do |config|
     end
   end
 
-  config.before(:all, unit_with_queue: true) do
-    ENV['APP_AWS_ACCESS_KEY_ID'] = 'fake'
-    ENV['APP_AWS_SECRET_ACCESS_KEY'] = 'fake'
-    ENV['AWS_REGION'] = 'us-east-1'
-    unless $sqs_mocking_started
-      SpecHelpers::Aws::SQSLocal.start_mocking!
-      $sqs_mocking_started = true
-    end
-  end
-
   config.after(:each, unit_with_database: true) do
     SpecHelpers::Aws::DynamoDBLocal.drop_tables!
   end

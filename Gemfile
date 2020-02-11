@@ -9,7 +9,7 @@ gem 'dynamoid'
 gem 'nokogiri'
 gem 'poltergeist'
 gem 'bcrypt'
-gem 'shoryuken'
+gem 'mail'
 group :test do
   gem 'rspec'
   gem 'rspec-expectations'

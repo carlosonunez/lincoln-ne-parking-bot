@@ -1,13 +1,18 @@
 # frozen_string_literal: true
 
+require 'aws-sdk-sqs'
+require 'base64'
+require 'mail'
 require 'parking_bot/session'
 require 'parking_bot/constants'
+require 'parking_bot/queue'
 
 class ParkingBot
   attr_accessor :session
 
   def initialize
-    @session = ParkingBot::Session.create
+    @session = Session.create
+    @queue = SQSQueue.new(queue_name: 'ppprk-codes')
   end
 
   def start_login!
@@ -24,6 +29,14 @@ class ParkingBot
     @session.click_button('Yes')
   rescue StandardError
     raise 'Failed to provide phone number'
+  end
+
+  def fetch_latest_code
+    email_notification = @queue.pop!
+    raise 'Timed out while waiting for a code.' if email_notification.nil?
+
+    encoded_email = JSON.load(email_notification)['content']
+    find_code_in_email(encoded_email)
   end
 
   def submit_verification_code(code)
@@ -77,5 +90,16 @@ class ParkingBot
 
     @session.click_button('Yes')
     raise 'Unable to pay' unless @session.has_text?('You are parked!')
+  end
+
+  private
+
+  def find_code_in_email(encoded_email)
+    email = Mail.read_from_string(Base64.decode64(encoded_email))
+    email.body.raw_source.split("\r\n").map do |line|
+      if line.match(/^Your Passport.* \d{3}$/)
+        line.gsub(/.*(\d{3})$/, '\1').to_i
+      end
+    end.compact!.first
   end
 end
