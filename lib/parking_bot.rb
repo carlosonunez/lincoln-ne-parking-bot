@@ -5,7 +5,7 @@ require 'base64'
 require 'mail'
 require 'parking_bot/session'
 require 'parking_bot/constants'
-require 'parking_bot/queue'
+require 'parking_bot/sqs_queue'
 
 class ParkingBot
   attr_accessor :session
