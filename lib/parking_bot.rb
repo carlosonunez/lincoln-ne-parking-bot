@@ -13,46 +13,22 @@ class ParkingBot
   def initialize
     @session = Session.create
     @queue = SQSQueue.new(queue_name: 'ppprk-codes')
+    @logged_in = false
   end
 
-  def start_login!
-    @session.visit(Constants::URL::LOGIN)
-    @session.click_link('Get Started')
-    raise 'Unable to start the login process' \
-      unless @session.has_button?('Text Me') &&
-             @session.has_field?('regPhoneNo')
-  end
-
-  def provide_phone_number(phone_number)
-    @session.fill_in('regPhoneNo', with: phone_number)
-    @session.click_button('Text Me')
-    @session.click_button('Yes')
+  def login!(phone_number:, pin:)
+    start_login!
+    provide_phone_number(phone_number)
+    verification_code = fetch_latest_code
+    submit_verification_code(verification_code)
+    provide_pin(pin)
+    @logged_in = true
   rescue StandardError
-    raise 'Failed to provide phone number'
+    raise 'Something went wrong while trying to log in.'
   end
 
-  def fetch_latest_code
-    email_notification = @queue.pop!
-    raise 'Timed out while waiting for a code.' if email_notification.nil?
-
-    encoded_email = JSON.load(email_notification)['content']
-    find_code_in_email(encoded_email)
-  end
-
-  def submit_verification_code(code)
-    @session.fill_in('verificationCode', with: code)
-    @session.click_button('Verify')
-    @session.click_button('Ok')
-  rescue StandardError
-    raise 'Failed to provide verification code or verification code incorrect.'
-  end
-
-  def provide_pin(pin)
-    @session.fill_in('pin', with: pin)
-    @session.click_button('Sign In')
-    raise 'PIN not valid' if @session.has_text?(Constants::Errors::INVALID_PIN)
-  rescue StandardError
-    raise 'Something went wrong'
+  def logged_in?
+    @logged_in
   end
 
   def provide_zone(zone)
@@ -93,6 +69,46 @@ class ParkingBot
   end
 
   private
+
+  def start_login!
+    @session.visit(Constants::URL::LOGIN)
+    @session.click_link('Get Started')
+    raise 'Unable to start the login process' \
+      unless @session.has_button?('Text Me') &&
+             @session.has_field?('regPhoneNo')
+  end
+
+  def provide_phone_number(phone_number)
+    @session.fill_in('regPhoneNo', with: phone_number)
+    @session.click_button('Text Me')
+    @session.click_button('Yes')
+  rescue StandardError
+    raise 'Failed to provide phone number'
+  end
+
+  def fetch_latest_code
+    email_notification = @queue.pop!
+    raise 'Timed out while waiting for a code.' if email_notification.nil?
+
+    encoded_email = JSON.load(email_notification)['content']
+    find_code_in_email(encoded_email)
+  end
+
+  def submit_verification_code(code)
+    @session.fill_in('verificationCode', with: code)
+    @session.click_button('Verify')
+    @session.click_button('Ok')
+  rescue StandardError
+    raise 'Failed to provide verification code or verification code incorrect.'
+  end
+
+  def provide_pin(pin)
+    @session.fill_in('pin', with: pin)
+    @session.click_button('Sign In')
+    raise 'PIN not valid' if @session.has_text?(Constants::Errors::INVALID_PIN)
+  rescue StandardError
+    raise 'Something went wrong'
+  end
 
   def find_code_in_email(encoded_email)
     email = Mail.read_from_string(Base64.decode64(encoded_email))
