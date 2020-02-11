@@ -61,10 +61,20 @@ services:
     command:
       - --tag
       - unit
+      - --fail-fast
+      - --format
+      - documentation
+  unit_page: # Use this for testing web page transitions.
+    extends: ruby
+    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    environment:
+      LOAD_PATH: "/app/spec/unit;/app/spec;/app/lib"
+      AWS_SQS_ENDPOINT_URL: "http://sqs:4567"
+      AWS_DYNAMODB_ENDPOINT_URL: "http://dynamodb:8000"
+      ENVIRONMENT: test
+    command:
       - --tag
-      - unit_with_database
-      - --tag
-      - unit_with_queue
+      - unit_page
       - --fail-fast
       - --format
       - documentation

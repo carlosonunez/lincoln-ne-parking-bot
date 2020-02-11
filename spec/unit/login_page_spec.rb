@@ -19,13 +19,14 @@ describe 'Given a parking bot' do
   end
 
   context 'When I visit the Welcome page' do
-    example 'Then I can enter my number to start the login process', :unit do
+    example 'Then I can enter my number to start the login process',
+            :unit_page do
       expect { @bot.send(:start_login!) }.not_to raise_error
     end
   end
 
   context 'When I enter my phone number' do
-    example "Then I'm asked to enter a verification code", :unit do
+    example "Then I'm asked to enter a verification code", :unit_page do
       @bot.send(:start_login!)
       @bot.send(:provide_phone_number, 123)
       expect(@bot.session.has_field?('verificationCode')).to be true
@@ -35,7 +36,7 @@ describe 'Given a parking bot' do
   # The test for actually grabbing verification codes from text messages
   # is covered in spec/unit/verification_code_spec.rb
   context 'When I provide a verification code' do
-    example 'Then I am logged in', :unit do
+    example 'Then I am logged in', :unit_page do
       @bot.send(:start_login!)
       @bot.send(:provide_phone_number, 123)
       @bot.send(:submit_verification_code, 123)
@@ -44,7 +45,7 @@ describe 'Given a parking bot' do
   end
 
   context 'When I provide my PIN' do
-    example 'Then I can start paying for parking', :unit do
+    example 'Then I can start paying for parking', :unit_page do
       @bot.send(:start_login!)
       @bot.send(:provide_phone_number, 123)
       @bot.send(:submit_verification_code, 123)

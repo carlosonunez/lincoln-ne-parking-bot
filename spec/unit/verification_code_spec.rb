@@ -20,7 +20,7 @@ describe 'Given a message on a queue containing our verification code' do
   end
 
   context 'When we receive it' do
-    example 'Then we get the code', :unit_with_queue do
+    example 'Then we get the code', :unit_page do
       expect(@bot.fetch_latest_code).to eq 804
     end
   end

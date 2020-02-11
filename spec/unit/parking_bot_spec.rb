@@ -18,9 +18,21 @@ describe 'Given a parking bot' do
   end
 
   context 'When I login' do
+    before(:each) do
+      @bot.login!(phone_number: '123', pin: '1234')
+    end
+
     example 'Then I am logged in', :unit do
-      @bot.login!(phone_number: '3477627147', pin: '7450')
       expect(@bot.logged_in?).to be true
+    end
+
+    example 'And I am able to pay for parking', :unit do
+      expect do
+        @bot.pay_for_parking!(zone_number: 123,
+                              space: 1234,
+                              card: 'TestCard-1234')
+      end
+        .not_to raise_error
     end
   end
 end
