@@ -84,7 +84,7 @@ jobs:
              echo "::set-env name=continue_parking::$result"
 
       - name: Run Parking Bot at a scheduled time (if scheduled)
-        if: github.event != 'execute' && env.continue_parking == "0"
+        if: github.event != 'execute' && env.continue_parking == 0
         run: ./docker-compose up -d selenium && \
               zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && \
               space_number=$(cat ppprk_run_file | egrep '^SPACE=' | cut -f2 -d '=') && \
