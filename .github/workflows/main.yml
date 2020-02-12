@@ -87,7 +87,6 @@ jobs:
   pay_for_parking_scheduled:
     name: Pay for parking per a schedule
     runs-on: ubuntu-latest
-    needs: checkout
     steps:
       - name: Check for run file
         run: ./docker-compose run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file
