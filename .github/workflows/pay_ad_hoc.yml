@@ -27,7 +27,7 @@ jobs:
           ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
 
       - name: Validate the payload
-        run: for env_var in ZONE_NUMBER SPACE_NUMBER TIME_TO_SCHEDULE_PARKING; 
+        run: for env_var in ZONE_NUMBER SPACE_NUMBER; 
              do 
                if ! echo "${{ github.event.client_payload.data }}" | egrep -q "^$env_var"; 
                then 
