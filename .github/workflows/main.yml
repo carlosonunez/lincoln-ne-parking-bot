@@ -1,0 +1,33 @@
+---
+name: Pay for parking
+on:
+  schedule:
+  - cron: 55 7 * * *
+
+jobs:
+  update_status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Docker Compose
+        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+             chmod +x ./docker-compose
+        env:
+          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+      - name: Decrypt environment file
+        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+        env:
+          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+
+      - name: Deploy AWS infrastructure
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
+
+      - name: Run Parking Bot
+        run: ./docker-compose up -d selenium && docker-compose run --rm parking_bot
+        env:
+          SPACE_NUMBER: ${{ secrets.parking_space_number }}
+
+      - name: Turn everything down
+        run: ./docker-compose down

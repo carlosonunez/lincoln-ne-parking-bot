@@ -62,6 +62,7 @@ services:
       - "echo 'INFO: Vendoring dependencies...' && bundle install --with test --path /vendor/bundle"
   parking-bot:
     extends: ruby
+    env_file: .env
     command: bin/parking_bot.rb
   unit:
     extends: ruby
