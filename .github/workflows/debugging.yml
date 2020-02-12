@@ -1,0 +1,30 @@
+---
+name: Debug jobs
+on:
+  repository_dispatch:
+    types:
+      - debug_print_env
+
+# Apologies for the violation of DRY here. GitHub Actions didn't support
+# reusable steps (unless you wanted to write JavaScript to do it, which...no).
+jobs:
+  print_env:
+    name: Show env
+    runs-on: ubuntu-latest
+    if: github.event.action == 'debug_print_env'
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Docker Compose
+        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+             chmod +x ./docker-compose
+        env:
+          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+      - name: Decrypt environment file
+        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+        env:
+          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+
+      - name: Show env
+        run: ./docker-compose run --rm --entrypoint sh ruby -c "env"
