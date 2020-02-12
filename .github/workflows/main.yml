@@ -1,33 +1,88 @@
 ---
 name: Pay for parking
 on:
+  repository-dispatch:
+    types:
+      - execute
+      - schedule
+      - destroy_infra
   schedule:
-  - cron: 55 7 * * *
+    - cron: */5 * * * *
 
 jobs:
-  update_status:
-    runs-on: ubuntu-latest
+  checkout:
+  steps:
+    - uses: actions/checkout@v1
+
+    - name: Install Docker Compose
+      run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+           chmod +x ./docker-compose
+      env:
+        DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+    - name: Decrypt environment file
+      run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+      env:
+        ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+
+    
+  destroy_infra:
+    if: github.event_name == 'destroy_infra'
+    name: Remove AWS infrastructure
+    needs: checkout
     steps:
-      - uses: actions/checkout@v1
+      - name: Remove AWS infrastructure
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform destroy
 
-      - name: Install Docker Compose
-        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
-             chmod +x ./docker-compose
-        env:
-          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+  queue_run:
+    if: github.event_name == 'schedule'
+    name: Queue a parking run
+    needs: checkout
+    steps:
+      - name: Create queue bucket (if it doesn't exist)
+        run: ./docker-compose run --rm aws s3 mb s3://${{ secrets.queue_bucket }} || true
 
-      - name: Decrypt environment file
-        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
-        env:
-          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+      - name: Create run file
+        run: echo "${{ github.event.client_payload.text }}" > /tmp/ppprk_run_file
+
+      - name: Insert run file into bucket
+        run: ./docker-compose run --rm aws s3 cp /tmp/ppprk_run_file s3://${{ secrets.queue_bucket }}
+
+  pay_for_parking:
+    name: Pay for parking (if run file exists)
+    runs-on: ubuntu-latest
+    needs: checkout
+    steps:
+      - name: Check for run file
+        run: ./docker-compose run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file .
 
       - name: Deploy AWS infrastructure
         run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
 
+      - name: Check if current time exceeds desired time to park
+        if: github.event != 'execute'
+        run: current_time=$(date +%s); \
+             desired_time=$(cat ppprk_run_file | \
+                egrep '^TIME_TO_SCHEDULE_PARKING=' | \
+                cut -f2 -d '='); \
+             result=$([ "$current_time" -ge "$desired_time" ]); \
+             echo "::set-env name=continue_parking::$result"
+
+      - name: Force the parking job if webhook says to do so
+        if: github.event == 'execute'
+        run: echo "::set-env name=continue_parking::0"
+
       - name: Run Parking Bot
-        run: ./docker-compose up -d selenium && docker-compose run --rm parking_bot
-        env:
-          SPACE_NUMBER: ${{ secrets.parking_space_number }}
+        if: env.continue_parking == "0"
+        run: ./docker-compose up -d selenium && \
+              zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && \
+              space_number=$(cat ppprk_run_file | egrep '^SPACE=' | cut -f2 -d '=') && \
+              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
 
       - name: Turn everything down
+        if: env.continue_parking == "0"
         run: ./docker-compose down
+
+      - name: Delete parking run from queue bucket
+        if: env.continue_parking == "0"
+        run: ./docker-compose run --rm aws s3 rm s3://${{ secrets.queue_bucket }}/ppprk_run_file
