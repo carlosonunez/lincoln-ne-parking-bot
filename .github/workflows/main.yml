@@ -26,7 +26,6 @@ jobs:
         env:
           ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
 
-    
   destroy_infra:
     runs-on: [ubuntu-latest]
     if: github.event_name == 'destroy_infra'
@@ -44,6 +43,16 @@ jobs:
     steps:
       - name: Create queue bucket (if it doesn't exist)
         run: ./docker-compose run --rm aws s3 mb s3://${{ secrets.queue_bucket }} || true
+
+      - name: Validate the payload
+        run: for env_var in ZONE_NUMBER SPACE_NUMBER TIME_TO_SCHEDULE_PARKING; \
+             do \
+               if ! cat /tmp/ppprk_run_file | egrep -q "^$env_var"; \
+               then \
+                 echo "::error Schedule failed; missing '$env_var'"; \
+                 exit 1; \
+               fi; \
+             done
 
       - name: Create run file
         run: echo "${{ github.event.client_payload.text }}" > /tmp/ppprk_run_file
