@@ -40,39 +40,57 @@ class ParkingBot
 
   private
 
+  def wait_for!(&block)
+    iterations = 0
+    until iterations == (ENV['TIMEOUT_SECONDS'] || 15)
+      return if block.call == true
+      sleep 1
+      iterations += 1
+    end
+    raise "Timed out waiting on an element to appear."
+  end
+
   def start_login!
     @session.visit(Constants::URL::LOGIN)
-    @session.click_link('Get Started')
-    raise 'Unable to start the login process' \
-      unless @session.has_button?('Text Me') &&
-             @session.has_field?('regPhoneNo')
+    @session.find('a', text: 'Get Started').click
+    if @session.has_text? 'Accept'
+      @session.find('a', text: 'Accept').click
+    end
   end
 
   def provide_phone_number(phone_number)
+    wait_for! { @session.has_field? 'regPhoneNo' }
     @session.fill_in('regPhoneNo', with: phone_number)
+    wait_for! { @session.has_button? 'Text Me' }
     @session.click_button('Text Me')
     @session.click_button('Yes')
+    wait_for! { @session.has_field? 'verificationCode' }
   rescue StandardError
     raise 'Failed to provide phone number'
   end
 
   def fetch_latest_code
-    email_notification = @queue.pop!
-    raise 'Timed out while waiting for a code.' if email_notification.nil?
+    queue_message = @queue.pop!
+    raise 'Timed out while waiting for a code.' if queue_message.nil?
 
-    encoded_email = JSON.parse(email_notification)['content']
+    message_body = JSON.parse(queue_message)['Message']
+    encoded_email = JSON.parse(message_body)['content']
+    raise 'No email found' if encoded_email.nil?
     find_code_in_email(encoded_email)
   end
 
   def submit_verification_code(code)
     @session.fill_in('verificationCode', with: code)
+    wait_for! { @session.has_button? 'Verify' }
     @session.click_button('Verify')
+    wait_for! { @session.has_button? 'Ok' }
     @session.click_button('Ok')
   rescue StandardError
     raise 'Failed to provide verification code or verification code incorrect.'
   end
 
   def provide_pin(pin)
+    wait_for! { @session.has_field? 'pin' }
     @session.fill_in('pin', with: pin)
     @session.click_button('Sign In')
     raise 'PIN not valid' if @session.has_text?(Constants::Errors::INVALID_PIN)
@@ -90,6 +108,7 @@ class ParkingBot
   end
 
   def provide_zone(zone)
+    wait_for! { @session.has_field? 'zoneNumber' }
     @session.fill_in('zoneNumber', with: zone)
     @session.click_button('Continue')
     raise "Zone invalid: #{zone}" \
@@ -98,6 +117,7 @@ class ParkingBot
   end
 
   def provide_space(space)
+    wait_for! { @session.has_field? 'spaceNumber' }
     @session.fill_in('spaceNumber', with: space)
     @session.click_button('Next')
     raise "Space invalid: #{space}" \
@@ -106,6 +126,7 @@ class ParkingBot
   end
 
   def choose_max_parking_time!
+    wait_for! { @session.has_button? 'Max Purchase' }
     raise 'No maximum purchase option available.' \
       unless @session.has_button?('Max Purchase')
 
@@ -119,9 +140,11 @@ class ParkingBot
       unless @session.has_button?(card)
 
     @session.click_button(card)
+    wait_for! { session.has_text? 'Please Confirm' }
     raise 'Unable to verify the payment' \
       unless @session.has_text?('Please Confirm')
 
+    wait_for! { session.has_button? 'Yes' }
     @session.click_button('Yes')
     raise 'Unable to pay' unless @session.has_text?('You are parked!')
   end

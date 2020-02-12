@@ -25,6 +25,8 @@ class ParkingBot
                                        url: hub_url,
                                        desired_capabilities: capabilities)
       end
+      Capybara.javascript_driver = :selenium
+      Capybara.default_driver = :selenium
     end
 
     def self.hub_url
