@@ -31,18 +31,29 @@ jobs:
       - name: Create queue bucket (if it doesn't exist)
         run: ./docker-compose run --rm aws s3 mb s3://${{ secrets.queue_bucket }} || true
 
-      - name: Validate the payload
-        run: for env_var in ZONE_NUMBER SPACE_NUMBER TIME_TO_SCHEDULE_PARKING; 
-             do 
-               if ! cat /tmp/ppprk_run_file | egrep -q "^$env_var"; 
-               then 
-                 echo "::error Schedule failed; missing '$env_var'"; 
-                 exit 1; 
-               fi; 
-             done
+      - name: Check for zone number
+        run: if [ -z "${{ github.event.client_payload.zone_number }}" ];
+             then
+              echo "::error Please provide a zone_number in client_payload.";
+              exit 1;
+             fi
+
+      - name: Check for space number
+        run: if [ -z "${{ github.event.client_payload.space_number }}" ];
+             then
+              echo "::error Please provide a zone_number in client_payload.";
+              exit 1;
+             fi
+
+      - name: Check for time to schedule parking
+        run: if [ -z "${{ github.event.client_payload.time }}" ];
+             then
+              echo "::error Please provide a time in client_payload.";
+              exit 1;
+             fi
 
       - name: Create run file
-        run: echo "${{ github.event.client_payload.text }}" > /tmp/ppprk_run_file
+        run: echo "ZONE_NUMBER=${{ github.event.client_payload.zone_number }}\nSPACE_NUMBER=${{ github.event.client_payload.space_number }}\nTIME_TO_SCHEDULE_PARKING=${{ github.event.client_payload.time }}" > /tmp/ppprk_run_file
 
       - name: Insert run file into bucket
         run: ./docker-compose run --rm aws s3 cp /tmp/ppprk_run_file s3://${{ secrets.queue_bucket }}
