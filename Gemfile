@@ -10,6 +10,7 @@ gem 'nokogiri'
 gem 'poltergeist'
 gem 'bcrypt'
 gem 'mail'
+gem 'selenium-webdriver'
 group :test do
   gem 'rspec'
   gem 'rspec-expectations'

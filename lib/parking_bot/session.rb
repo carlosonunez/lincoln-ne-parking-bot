@@ -1,28 +1,40 @@
 # frozen_string_literal: true
 
 require 'capybara'
-require 'capybara/poltergeist'
+require 'selenium-webdriver'
 
 class ParkingBot
   module Session
     def self.create
       register_driver
-      Capybara::Session.new :poltergeist
+      Capybara::Session.new :selenium
     end
 
     def self.register_driver
-      Capybara.register_driver :poltergeist do |app|
-        Capybara::Poltergeist::Driver.new(app,
-                                          phantomjs: '/opt/phantomjs/phantomjs',
-                                          js_errors: false,
-                                          phantomjs_options: [
-                                            '--ssl-protocol=any',
-                                            '--load-images=no',
-                                            '--ignore-ssl-errors=yes'
-                                          ])
+      %w[SELENIUM_HOST SELENIUM_PORT].each do |required|
+        raise "Please define #{required}" if ENV[required].nil?
+      end
+      capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
+        'chromeOptions' => {
+          'args' => ['--no-default-browser-check']
+        }
+      )
+      Capybara.register_driver :selenium do |app|
+        Capybara::Selenium::Driver.new(app,
+                                       browser: :remote,
+                                       url: hub_url,
+                                       desired_capabilities: capabilities)
       end
     end
 
+    def self.hub_url
+      Socket.tcp(ENV['SELENIUM_HOST'], ENV['SELENIUM_PORT']) { true }
+      "http://#{ENV['SELENIUM_HOST']}:#{ENV['SELENIUM_PORT']}/wd/hub"
+    rescue IOError
+      raise 'Selenium hub not started.'
+    end
+
     private_class_method :register_driver
+    private_class_method :hub_url
   end
 end

@@ -35,10 +35,14 @@ module SpecHelpers
 
       mocked_page_path = find_mock(url)[:page]
       register_test_driver
-      mock_session = Capybara::Session.new :poltergeist_test
+      mock_session = Capybara::Session.new :selenium_test
       mock_session.visit("file:///app/spec/fixtures/#{mocked_page_path}")
       enable_mocked_session! mock_session
       mock_visits! url
+    end
+
+    def self.end_mock_session!(session)
+      session.quit
     end
 
     def self.enable_mocked_session!(session)
@@ -47,11 +51,11 @@ module SpecHelpers
       allow(Capybara::Session).to receive(:new) { :failure }
       allow(Capybara::Session)
         .to receive(:new)
-        .with(:poltergeist)
+        .with(:selenium_test)
         .and_return(session)
       allow(Capybara::Session)
         .to receive(:new)
-        .with(:poltergeist_test)
+        .with(:selenium)
         .and_return(session)
     end
 
@@ -72,15 +76,33 @@ module SpecHelpers
     end
 
     def self.register_test_driver
-      Capybara.register_driver :poltergeist_test do |app|
-        Capybara::Poltergeist::Driver.new(app,
-                                          phantomjs: '/opt/phantomjs/phantomjs',
-                                          js_errors: false,
-                                          phantomjs_options: [
-                                            '--ssl-protocol=any',
-                                            '--load-images=no',
-                                            '--ignore-ssl-errors=yes'
-                                          ])
+      if ENV['USE_POLTERGEIST'] == true
+        Capybara.register_driver :poltergeist_test do |app|
+          poltergeist_path = ENV['POLTERGEIST_PATH'] ||
+                             '/opt/phantomjs/phantomjs'
+          raise 'Poltergeist not found' unless File.exist? poltergeist_path
+
+          Capybara::Poltergeist::Driver.new(app,
+                                            phantomjs: poltergeist_path,
+                                            js_errors: false,
+                                            phantomjs_options: [
+                                              '--ssl-protocol=any',
+                                              '--load-images=no',
+                                              '--ignore-ssl-errors=yes'
+                                            ])
+        end
+      else
+        capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
+          'chromeOptions' => {
+            'args' => ['--no-default-browser-check']
+          }
+        )
+        Capybara.register_driver :selenium_test do |app|
+          Capybara::Selenium::Driver.new(app,
+                                         browser: :remote,
+                                         url: 'http://selenium:4444/wd/hub',
+                                         desired_capabilities: capabilities)
+        end
       end
     end
   end

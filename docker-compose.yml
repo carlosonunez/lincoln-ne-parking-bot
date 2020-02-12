@@ -22,11 +22,24 @@ services:
     environment:
       GEM_PATH: "vendor/bundle/ruby/2.5.0"
       VERIFY_CODE_QUEUE_NAME: "ppprk_verification_codes"
+      SELENIUM_HOST: selenium
+      SELENIUM_PORT: 4444
     working_dir: /app
     entrypoint: ruby
     command:
       - -e
       - "puts 'Welcome to your service.'"
+  selenium:
+    image: selenium/standalone-chrome-debug
+    environment:
+      ENVIRONMENT: test
+    volumes:
+      - /dev/shm:/dev/shm
+      - $PWD:/app:cached,ro
+    working_dir: /app
+    ports:
+      - 4444:4444
+      - 5900:5900
   vendor:
     extends: ruby
     volumes:
