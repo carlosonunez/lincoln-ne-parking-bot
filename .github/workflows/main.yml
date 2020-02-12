@@ -68,15 +68,18 @@ jobs:
              result=$([ "$current_time" -ge "$desired_time" ]); \
              echo "::set-env name=continue_parking::$result"
 
-      - name: Force the parking job if webhook says to do so
-        if: github.event == 'execute'
-        run: echo "::set-env name=continue_parking::0"
-
-      - name: Run Parking Bot
-        if: env.continue_parking == "0"
+      - name: Run Parking Bot at a scheduled time
+        if: github.event != 'execute' && env.continue_parking == "0"
         run: ./docker-compose up -d selenium && \
               zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && \
               space_number=$(cat ppprk_run_file | egrep '^SPACE=' | cut -f2 -d '=') && \
+              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
+
+      - name: Run an ad-hoc parking bot
+        if: github.event == 'execute'
+        run: ./docker-compose up -d selenium && \
+              zone_number=$(echo ${{ github.event.client_payload.data }} | egrep '^ZONE=' | cut -f2 -d '=') && \
+              space_number=$(echo ${{ github.event.client_payload.data }} | egrep '^SPACE=' | cut -f2 -d '=') && \
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
 
       - name: Turn everything down
