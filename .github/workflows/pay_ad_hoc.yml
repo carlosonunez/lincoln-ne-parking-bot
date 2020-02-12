@@ -27,13 +27,13 @@ jobs:
           ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
 
       - name: Validate the payload
-        run: for env_var in ZONE_NUMBER SPACE_NUMBER TIME_TO_SCHEDULE_PARKING; \
-             do \
-               if ! echo "${{ github.event.client_payload.data }}" | egrep -q "^$env_var"; \
-               then \
-                 echo "::error Schedule failed; missing '$env_var'"; \
-                 exit 1; \
-               fi; \
+        run: for env_var in ZONE_NUMBER SPACE_NUMBER TIME_TO_SCHEDULE_PARKING; 
+             do 
+               if ! echo "${{ github.event.client_payload.data }}" | egrep -q "^$env_var"; 
+               then 
+                 echo "::error Schedule failed; missing '$env_var'"; 
+                 exit 1; 
+               fi; 
              done
 
       - name: Deploy AWS infrastructure
@@ -41,7 +41,7 @@ jobs:
 
       - name: Run an ad-hoc parking bot
         if: github.event == 'execute'
-        run: ./docker-compose up -d selenium && \
-              zone_number=$(echo ${{ github.event.client_payload.data }} | egrep '^ZONE=' | cut -f2 -d '=') && \
-              space_number=$(echo ${{ github.event.client_payload.data }} | egrep '^SPACE=' | cut -f2 -d '=') && \
+        run: ./docker-compose up -d selenium && 
+              zone_number=$(echo ${{ github.event.client_payload.data }} | egrep '^ZONE=' | cut -f2 -d '=') && 
+              space_number=$(echo ${{ github.event.client_payload.data }} | egrep '^SPACE=' | cut -f2 -d '=') && 
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot

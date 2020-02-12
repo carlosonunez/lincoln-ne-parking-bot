@@ -32,13 +32,13 @@ jobs:
         run: ./docker-compose run --rm aws s3 mb s3://${{ secrets.queue_bucket }} || true
 
       - name: Validate the payload
-        run: for env_var in ZONE_NUMBER SPACE_NUMBER TIME_TO_SCHEDULE_PARKING; \
-             do \
-               if ! cat /tmp/ppprk_run_file | egrep -q "^$env_var"; \
-               then \
-                 echo "::error Schedule failed; missing '$env_var'"; \
-                 exit 1; \
-               fi; \
+        run: for env_var in ZONE_NUMBER SPACE_NUMBER TIME_TO_SCHEDULE_PARKING; 
+             do 
+               if ! cat /tmp/ppprk_run_file | egrep -q "^$env_var"; 
+               then 
+                 echo "::error Schedule failed; missing '$env_var'"; 
+                 exit 1; 
+               fi; 
              done
 
       - name: Create run file
@@ -73,18 +73,18 @@ jobs:
         run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
 
       - name: Check if current time exceeds desired time to park (if scheduled)
-        run: current_time=$(date +%s); \
-             desired_time=$(cat ppprk_run_file | \
-                egrep '^TIME_TO_SCHEDULE_PARKING=' | \
-                cut -f2 -d '='); \
-             result=$([ "$current_time" -ge "$desired_time" ]); \
+        run: current_time=$(date +%s); 
+             desired_time=$(cat ppprk_run_file | 
+                egrep '^TIME_TO_SCHEDULE_PARKING=' | 
+                cut -f2 -d '='); 
+             result=$([ "$current_time" -ge "$desired_time" ]); 
              echo "::set-env name=continue_parking::$result"
 
       - name: Run Parking Bot at a scheduled time (if scheduled)
         if: env.continue_parking == 0
-        run: ./docker-compose up -d selenium && \
-              zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && \
-              space_number=$(cat ppprk_run_file | egrep '^SPACE=' | cut -f2 -d '=') && \
+        run: ./docker-compose up -d selenium && 
+              zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && 
+              space_number=$(cat ppprk_run_file | egrep '^SPACE=' | cut -f2 -d '=') && 
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
 
       - name: Turn everything down
