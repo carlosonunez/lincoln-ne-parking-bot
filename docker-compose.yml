@@ -64,6 +64,30 @@ services:
       - --fail-fast
       - --format
       - documentation
+  integration:
+    extends: ruby
+    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    env_file: .env
+    environment:
+      LOAD_PATH: "/app/spec/integration;/app/spec"
+    command:
+      - --tag
+      - integration_local
+      - --fail-fast
+      - --format
+      - documentation
+  check_environment:
+    extends: ruby
+    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    env_file: .env
+    environment:
+      LOAD_PATH: "/app/spec/environment;/app/spec"
+    command:
+      - --tag
+      - env_check
+      - --fail-fast
+      - --format
+      - documentation
   unit_page: # Use this for testing web page transitions.
     extends: ruby
     entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
