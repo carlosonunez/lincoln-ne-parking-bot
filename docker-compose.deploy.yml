@@ -1,0 +1,41 @@
+version: '2.2'
+services:
+  aws:
+    image: anigeo/awscli
+    env_file: .env
+    environment:
+      - AWS_ACCESS_KEY_ID=${TERRAFORM_AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${TERRAFORM_AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${TERRAFORM_AWS_REGION}
+    volumes:
+      - $PWD:/app
+    working_dir: /app
+  terraform:
+    image: hashicorp/terraform
+    env_file: .env
+    environment:
+      - TF_CLI_ARGS_destroy="-force"
+      - TF_CLI_ARGS_apply="-auto-approve"
+      - TF_DATA_DIR=/tmp
+      - AWS_ACCESS_KEY_ID=${TERRAFORM_AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${TERRAFORM_AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${TERRAFORM_AWS_REGION}
+    volumes:
+      - $PWD:/app
+    working_dir: /app
+    entrypoint: 
+      - sh
+      - ./scripts/execute_terraform.sh
+  plan:
+    extends: terraform
+    command:
+      - plan
+  apply:
+    extends: terraform
+    command:
+      - apply
+  change_encoding:
+    extends: aws
+    entrypoint: sh
+    command:
+      - scripts/change_aws_ses_receipt_rule_encoding.sh
