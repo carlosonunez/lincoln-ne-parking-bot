@@ -9,9 +9,33 @@ on:
   schedule:
     - cron: "*/5 * * * *"
 
+# Apologies for the violation of DRY here. GitHub Actions didn't support
+# reusable steps (unless you wanted to write JavaScript to do it, which...no).
 jobs:
-  checkout:
+  destroy_infra:
     runs-on: [ubuntu-latest]
+    if: github.event_name == 'destroy_infra'
+    name: Remove AWS infrastructure
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Docker Compose
+        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+             chmod +x ./docker-compose
+        env:
+          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+      - name: Decrypt environment file
+        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+        env:
+          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+      - name: Remove AWS infrastructure
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform destroy
+
+  schedule_new_parking_payment:
+    runs-on: [ubuntu-latest]
+    if: github.event_name == 'schedule'
+    name: Schedule a parking payment
     steps:
       - uses: actions/checkout@v1
 
@@ -26,21 +50,6 @@ jobs:
         env:
           ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
 
-  destroy_infra:
-    runs-on: [ubuntu-latest]
-    if: github.event_name == 'destroy_infra'
-    name: Remove AWS infrastructure
-    needs: checkout
-    steps:
-      - name: Remove AWS infrastructure
-        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform destroy
-
-  queue_run:
-    runs-on: [ubuntu-latest]
-    if: github.event_name == 'schedule'
-    name: Queue a parking run
-    needs: checkout
-    steps:
       - name: Create queue bucket (if it doesn't exist)
         run: ./docker-compose run --rm aws s3 mb s3://${{ secrets.queue_bucket }} || true
 
@@ -60,35 +69,13 @@ jobs:
       - name: Insert run file into bucket
         run: ./docker-compose run --rm aws s3 cp /tmp/ppprk_run_file s3://${{ secrets.queue_bucket }}
 
-  pay_for_parking:
-    name: Pay for parking (if run file exists)
+  pay_for_parking_ad_hoc:
+    name: Pay for parking right now
     runs-on: ubuntu-latest
-    needs: checkout
+    if: github.event == 'execute'
     steps:
-      - name: Check for run file
-        if: github.event != 'execute'
-        run: ./docker-compose run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file
-
-        # The next few steps should only execute if a scheduled run was found
-        # or if we were told to execute per the 'execute' webhook.
       - name: Deploy AWS infrastructure
         run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
-
-      - name: Check if current time exceeds desired time to park (if scheduled)
-        if: github.event != 'execute'
-        run: current_time=$(date +%s); \
-             desired_time=$(cat ppprk_run_file | \
-                egrep '^TIME_TO_SCHEDULE_PARKING=' | \
-                cut -f2 -d '='); \
-             result=$([ "$current_time" -ge "$desired_time" ]); \
-             echo "::set-env name=continue_parking::$result"
-
-      - name: Run Parking Bot at a scheduled time (if scheduled)
-        if: github.event != 'execute' && env.continue_parking == 0
-        run: ./docker-compose up -d selenium && \
-              zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && \
-              space_number=$(cat ppprk_run_file | egrep '^SPACE=' | cut -f2 -d '=') && \
-              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
 
       - name: Run an ad-hoc parking bot
         if: github.event == 'execute'
@@ -97,9 +84,38 @@ jobs:
               space_number=$(echo ${{ github.event.client_payload.data }} | egrep '^SPACE=' | cut -f2 -d '=') && \
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
 
+  pay_for_parking_scheduled:
+    name: Pay for parking per a schedule
+    runs-on: ubuntu-latest
+    needs: checkout
+    steps:
+      - name: Check for run file
+        run: ./docker-compose run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file
+
+        # The next few steps should only execute if a scheduled run was found
+        # or if we were told to execute per the 'execute' webhook.
+      - name: Deploy AWS infrastructure
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
+
+      - name: Check if current time exceeds desired time to park (if scheduled)
+        run: current_time=$(date +%s); \
+             desired_time=$(cat ppprk_run_file | \
+                egrep '^TIME_TO_SCHEDULE_PARKING=' | \
+                cut -f2 -d '='); \
+             result=$([ "$current_time" -ge "$desired_time" ]); \
+             echo "::set-env name=continue_parking::$result"
+
+      - name: Run Parking Bot at a scheduled time (if scheduled)
+        if: env.continue_parking == 0
+        run: ./docker-compose up -d selenium && \
+              zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && \
+              space_number=$(cat ppprk_run_file | egrep '^SPACE=' | cut -f2 -d '=') && \
+              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
+
       - name: Turn everything down
+        if: env.continue_parking == 0
         run: ./docker-compose down
 
       - name: Delete parking run from queue bucket
-        if: github.event != 'execute'
+        if: env.continue_parking == 0
         run: ./docker-compose run --rm aws s3 rm s3://${{ secrets.queue_bucket }}/ppprk_run_file
