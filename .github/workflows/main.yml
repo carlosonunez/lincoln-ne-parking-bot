@@ -14,7 +14,7 @@ on:
 jobs:
   destroy_infra:
     runs-on: [ubuntu-latest]
-    if: github.event_name == 'destroy_infra'
+    if: github.event.action == 'destroy_infra'
     name: Remove AWS infrastructure
     steps:
       - uses: actions/checkout@v1
@@ -34,7 +34,7 @@ jobs:
 
   schedule_new_parking_payment:
     runs-on: [ubuntu-latest]
-    if: github.event_name == 'schedule'
+    if: github.event.action == 'schedule'
     name: Schedule a parking payment
     steps:
       - uses: actions/checkout@v1
@@ -74,6 +74,19 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event == 'execute'
     steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Docker Compose
+        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+             chmod +x ./docker-compose
+        env:
+          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+      - name: Decrypt environment file
+        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+        env:
+          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+
       - name: Deploy AWS infrastructure
         run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
 
@@ -88,6 +101,19 @@ jobs:
     name: Pay for parking per a schedule
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Docker Compose
+        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+             chmod +x ./docker-compose
+        env:
+          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+      - name: Decrypt environment file
+        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+        env:
+          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+
       - name: Check for run file
         run: ./docker-compose run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file
 
