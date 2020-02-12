@@ -27,4 +27,4 @@ jobs:
           ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
 
       - name: Show env
-        run: ./docker-compose run --rm --entrypoint sh ruby -c "env"
+        run: docker run --env-file .env --entrypoint sh alpine -c 'env'
