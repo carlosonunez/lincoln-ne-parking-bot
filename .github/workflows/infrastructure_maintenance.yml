@@ -1,0 +1,29 @@
+---
+name: Infrastructure maintenance
+on:
+  repository_dispatch:
+    types:
+      - destroy_infra
+
+# Apologies for the violation of DRY here. GitHub Actions didn't support
+# reusable steps (unless you wanted to write JavaScript to do it, which...no).
+jobs:
+  destroy_infra:
+    runs-on: [ubuntu-latest]
+    if: github.event.action == 'destroy_infra'
+    name: Remove AWS infrastructure
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Docker Compose
+        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+             chmod +x ./docker-compose
+        env:
+          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+      - name: Decrypt environment file
+        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+        env:
+          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+      - name: Remove AWS infrastructure
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform destroy

@@ -1,37 +1,15 @@
 ---
-name: Pay for parking
+name: Scheduled parking payments
 on:
   repository_dispatch:
     types:
-      - execute
       - schedule
-      - destroy_infra
   schedule:
     - cron: "*/5 * * * *"
 
 # Apologies for the violation of DRY here. GitHub Actions didn't support
 # reusable steps (unless you wanted to write JavaScript to do it, which...no).
 jobs:
-  destroy_infra:
-    runs-on: [ubuntu-latest]
-    if: github.event.action == 'destroy_infra'
-    name: Remove AWS infrastructure
-    steps:
-      - uses: actions/checkout@v1
-
-      - name: Install Docker Compose
-        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
-             chmod +x ./docker-compose
-        env:
-          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
-
-      - name: Decrypt environment file
-        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
-        env:
-          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
-      - name: Remove AWS infrastructure
-        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform destroy
-
   schedule_new_parking_payment:
     runs-on: [ubuntu-latest]
     if: github.event.action == 'schedule'
@@ -68,34 +46,6 @@ jobs:
 
       - name: Insert run file into bucket
         run: ./docker-compose run --rm aws s3 cp /tmp/ppprk_run_file s3://${{ secrets.queue_bucket }}
-
-  pay_for_parking_ad_hoc:
-    name: Pay for parking right now
-    runs-on: ubuntu-latest
-    if: github.event == 'execute'
-    steps:
-      - uses: actions/checkout@v1
-
-      - name: Install Docker Compose
-        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
-             chmod +x ./docker-compose
-        env:
-          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
-
-      - name: Decrypt environment file
-        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
-        env:
-          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
-
-      - name: Deploy AWS infrastructure
-        run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
-
-      - name: Run an ad-hoc parking bot
-        if: github.event == 'execute'
-        run: ./docker-compose up -d selenium && \
-              zone_number=$(echo ${{ github.event.client_payload.data }} | egrep '^ZONE=' | cut -f2 -d '=') && \
-              space_number=$(echo ${{ github.event.client_payload.data }} | egrep '^SPACE=' | cut -f2 -d '=') && \
-              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
 
   pay_for_parking_scheduled:
     name: Pay for parking per a schedule
@@ -144,3 +94,4 @@ jobs:
       - name: Delete parking run from queue bucket
         if: env.continue_parking == 0
         run: ./docker-compose run --rm aws s3 rm s3://${{ secrets.queue_bucket }}/ppprk_run_file
+
