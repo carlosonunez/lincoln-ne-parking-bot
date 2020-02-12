@@ -54,12 +54,15 @@ jobs:
     needs: checkout
     steps:
       - name: Check for run file
-        run: ./docker-compose run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file .
+        if: github.event != 'execute'
+        run: ./docker-compose run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file
 
+        # The next few steps should only execute if a scheduled run was found
+        # or if we were told to execute per the 'execute' webhook.
       - name: Deploy AWS infrastructure
         run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
 
-      - name: Check if current time exceeds desired time to park
+      - name: Check if current time exceeds desired time to park (if scheduled)
         if: github.event != 'execute'
         run: current_time=$(date +%s); \
              desired_time=$(cat ppprk_run_file | \
@@ -68,7 +71,7 @@ jobs:
              result=$([ "$current_time" -ge "$desired_time" ]); \
              echo "::set-env name=continue_parking::$result"
 
-      - name: Run Parking Bot at a scheduled time
+      - name: Run Parking Bot at a scheduled time (if scheduled)
         if: github.event != 'execute' && env.continue_parking == "0"
         run: ./docker-compose up -d selenium && \
               zone_number=$(cat ppprk_run_file | egrep '^ZONE=' | cut -f2 -d '=') && \
@@ -83,9 +86,8 @@ jobs:
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
 
       - name: Turn everything down
-        if: env.continue_parking == "0"
         run: ./docker-compose down
 
       - name: Delete parking run from queue bucket
-        if: env.continue_parking == "0"
+        if: github.event != 'execute'
         run: ./docker-compose run --rm aws s3 rm s3://${{ secrets.queue_bucket }}/ppprk_run_file
