@@ -25,7 +25,7 @@ data "aws_iam_policy_document" "iam_user" {
   statement {
     sid = "1"
     effect = "Allow"
-    actions =  [ "sqs:ReceiveMessage", "sqs:GetQueueUrl" ]
+    actions =  [ "sqs:ReceiveMessage", "sqs:GetQueueUrl", "sqs:DeleteMessage" ]
     resources = [ aws_sqs_queue.passport_parking_verification_codes_queue.arn ]
   }
 }
@@ -66,7 +66,7 @@ resource "aws_iam_policy" "parking_bot" {
   name = local.app_iam_user_name
   path = "/"
   description = "Provides access to the Passport Parking verification codes SQS queue."
-  policy = "${data.aws_iam_policy_document.iam_user.json}"
+  policy = data.aws_iam_policy_document.iam_user.json
 }
 
 resource "aws_iam_policy_attachment" "parking_bot" {

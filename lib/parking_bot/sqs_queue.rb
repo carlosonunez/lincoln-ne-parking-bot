@@ -13,10 +13,17 @@ class ParkingBot
     def pop!
       raise 'Queue not ready' unless ready?
 
-      @client.receive_message(
+      messages = @client.receive_message(
         queue_url: queue_url,
         wait_time_seconds: 20
-      ).messages.first.body
+      ).messages
+      desired_message = messages.first
+      message_body = desired_message.body
+      @client.delete_message(
+        queue_url: queue_url,
+        receipt_handle: desired_message.receipt_handle
+      )
+      message_body
     end
 
     def queue_url
