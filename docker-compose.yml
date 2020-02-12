@@ -17,14 +17,11 @@ services:
     build:
       dockerfile: ruby.Dockerfile
       context: .
-    volumes:
-      - "$PWD:/app:ro,cached"
     environment:
-      GEM_PATH: "vendor/bundle/ruby/2.5.0"
+      GEM_PATH: /var/runtime/gems
       VERIFY_CODE_QUEUE_NAME: "ppprk_verification_codes"
       SELENIUM_HOST: selenium
       SELENIUM_PORT: 4444
-    working_dir: /app
     entrypoint: ruby
     command:
       - -e
@@ -40,33 +37,13 @@ services:
     ports:
       - 4444:4444
       - 5900:5900
-  vendor:
-    extends: ruby
-    volumes:
-      - "$PWD:/app:delegated"
-      - "$PWD/vendor:/vendor:delegated"
-      - "$PWD/Gemfile:/Gemfile"
-    entrypoint: sh
-    command:
-      - -c
-      - "echo 'INFO: Vendoring dependencies...' && bundle install --path /vendor/bundle"
-  vendor-with-test:
-    extends: ruby
-    volumes:
-      - "$PWD:/app:delegated"
-      - "$PWD/vendor:/vendor:delegated"
-      - "$PWD/Gemfile:/Gemfile"
-    entrypoint: sh
-    command:
-      - -c
-      - "echo 'INFO: Vendoring dependencies...' && bundle install --with test --path /vendor/bundle"
   parking-bot:
     extends: ruby
     env_file: .env
     command: bin/parking_bot.rb
   unit:
     extends: ruby
-    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    entrypoint: /var/runtime/bin/rspec
     environment:
       LOAD_PATH: "/app/spec/unit;/app/spec;/app/lib"
       AWS_SQS_ENDPOINT_URL: "http://sqs:4567"
@@ -80,7 +57,7 @@ services:
       - documentation
   integration:
     extends: ruby
-    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    entrypoint: /var/runtime/bin/rspec
     env_file: .env
     environment:
       LOAD_PATH: "/app/spec/integration;/app/spec"
@@ -92,7 +69,7 @@ services:
       - documentation
   check_environment:
     extends: ruby
-    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    entrypoint: /var/runtime/bin/rspec
     env_file: .env
     environment:
       LOAD_PATH: "/app/spec/environment;/app/spec"
@@ -104,7 +81,7 @@ services:
       - documentation
   unit_page: # Use this for testing web page transitions.
     extends: ruby
-    entrypoint: vendor/bundle/ruby/2.5.0/bin/rspec
+    entrypoint: /var/runtime/bin/rspec
     environment:
       LOAD_PATH: "/app/spec/unit;/app/spec;/app/lib"
       AWS_SQS_ENDPOINT_URL: "http://sqs:4567"
@@ -118,7 +95,7 @@ services:
       - documentation
   lint:
     extends: ruby
-    entrypoint: vendor/bundle/ruby/2.5.0/bin/rubocop
+    entrypoint: /var/runtime/bin/rubocop
     volumes:
       - "$PWD:/app:delegated" # need write access so that we can auto-correct
     environment:
@@ -131,10 +108,3 @@ services:
       - Style/Documentation,Style/GlobalVars
       - lib/**/*.rb
       - spec
-  create_queue:
-    extends: ruby
-    entrypoint: vendor/bundle/ruby/2.5.0/bin/shoryuken
-    command:
-      - sqs
-      - create
-      - ppprk_verification_codes

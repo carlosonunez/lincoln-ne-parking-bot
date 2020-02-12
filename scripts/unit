@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
-REVENDOR="${REVENDOR:-false}"
 TEST_TYPE="${TEST_TYPE:-unit}"
-if ! test -d "vendor/bundle" || test "$REVENDOR" == "true"
-then
-  docker-compose run --rm vendor
-fi
 docker-compose up -d sqs selenium
 docker-compose run --rm lint
 docker-compose run --rm "$TEST_TYPE" $*

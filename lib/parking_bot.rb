@@ -44,18 +44,17 @@ class ParkingBot
     iterations = 0
     until iterations == (ENV['TIMEOUT_SECONDS'] || 15)
       return if block.call == true
+
       sleep 1
       iterations += 1
     end
-    raise "Timed out waiting on an element to appear."
+    raise 'Timed out waiting on an element to appear.'
   end
 
   def start_login!
     @session.visit(Constants::URL::LOGIN)
     @session.find('a', text: 'Get Started').click
-    if @session.has_text? 'Accept'
-      @session.find('a', text: 'Accept').click
-    end
+    @session.find('a', text: 'Accept').click if @session.has_text? 'Accept'
   end
 
   def provide_phone_number(phone_number)
@@ -76,6 +75,7 @@ class ParkingBot
     message_body = JSON.parse(queue_message)['Message']
     encoded_email = JSON.parse(message_body)['content']
     raise 'No email found' if encoded_email.nil?
+
     find_code_in_email(encoded_email)
   end
 
