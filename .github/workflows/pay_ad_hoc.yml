@@ -40,11 +40,20 @@ jobs:
               exit 1;
              fi
 
+      # TODO: Remvoe this after debugging.
+      - name: Make screenshots folder
+        run: mkdir screenshots
+
       - name: Deploy AWS infrastructure
         run: ./docker-compose -f docker-compose.deploy.yml run --rm terraform apply
 
+        # TODO: Make this fail again. For some reason, entering phone numbers
+        # is failing within Actions but passing locally. Might be timing-related.
       - name: Run an ad-hoc parking bot
         run: ./docker-compose up -d selenium && 
               zone_number=${{ github.event.client_payload.zone_number }} && 
               space_number=${{ github.event.client_payload.space_number }} && 
-              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking-bot
+              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking-bot || true
+
+      - name: Send screenshots to AWS S3
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp --recursive /screenshots s3://{{ secrets.queue_bucket }}/

@@ -43,6 +43,8 @@ services:
   unit:
     extends: ruby
     entrypoint: rspec
+    volumes:
+      - "$PWD/screenshots:/screenshots" # needed to debug some weirdness in GH Actions
     environment:
       LOAD_PATH: "/app/spec/unit;/app/spec;/app/lib"
       AWS_SQS_ENDPOINT_URL: "http://sqs:4567"
