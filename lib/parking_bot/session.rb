@@ -3,6 +3,19 @@
 require 'capybara'
 require 'selenium-webdriver'
 
+module ::Selenium::WebDriver::Remote
+  class Bridge
+    alias old_execute execute
+
+    # This slows down typing so that we don't get wrecked by the runner
+    # moving too quickly.
+    def execute(*args)
+      sleep(rand(0.1..0.3).round(2))
+      old_execute(*args)
+    end
+  end
+end
+
 class ParkingBot
   module Session
     def self.create
@@ -25,6 +38,7 @@ class ParkingBot
                                        url: hub_url,
                                        desired_capabilities: capabilities)
       end
+      Capybara.default_max_wait_time = 10 # fucking animations
       Capybara.javascript_driver = :selenium
       Capybara.default_driver = :selenium
     end
