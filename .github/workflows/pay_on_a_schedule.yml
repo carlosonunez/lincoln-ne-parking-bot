@@ -121,3 +121,6 @@ jobs:
         if: env.continue_parking == 0
         run: ./docker-compose run --rm aws s3 rm s3://${{ secrets.queue_bucket }}/ppprk_run_file
 
+      - name: Purge the queue when done
+        if: env.continue_parking == 0
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm purge_verification_codes_queue

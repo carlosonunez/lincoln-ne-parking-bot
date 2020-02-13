@@ -48,3 +48,6 @@ jobs:
               zone_number=${{ github.event.client_payload.zone_number }} && 
               space_number=${{ github.event.client_payload.space_number }} && 
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
+
+      - name: Purge the queue when done
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm purge_verification_codes_queue

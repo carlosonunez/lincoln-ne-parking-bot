@@ -11,7 +11,7 @@ services:
       - $PWD:/app
     working_dir: /app
   terraform:
-    image: hashicorp/terraform
+    image: hashicorp/terraform:0.12.20
     env_file: .env
     environment:
       - TF_CLI_ARGS_destroy="-force"
@@ -39,3 +39,8 @@ services:
     entrypoint: sh
     command:
       - scripts/change_aws_ses_receipt_rule_encoding.sh
+  purge_sqs_queue:
+    extends: aws
+    entrypoint: sh
+    command:
+      - scripts/purge_verification_codes_queue.sh

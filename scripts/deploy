@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-docker-compose run --rm vendor && \
-  docker-compose -f docker-compose.deploy.yml run --rm terraform apply && \
-  docker-compose -f docker-compose.deploy.yml run --rm change_encoding && \
-  docker-compose run --rm check_environment
+docker-compose -f docker-compose.deploy.yml run --rm terraform apply && \
+docker-compose -f docker-compose.deploy.yml run --rm change_encoding && \
+docker-compose run --rm check_environment

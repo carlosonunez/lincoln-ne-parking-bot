@@ -140,3 +140,7 @@ output "aws_ses_region" {
 output "sns_topic_arn" {
   value = aws_sns_topic.inbound_passport_parking_code_notifications.arn
 }
+
+output "sqs_queue_url" {
+  value = aws_sqs_queue.passport_parking_verification_codes_queue.id
+}
