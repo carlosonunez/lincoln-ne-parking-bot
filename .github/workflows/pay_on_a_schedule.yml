@@ -56,7 +56,7 @@ jobs:
         run: echo "ZONE_NUMBER=${{ github.event.client_payload.zone_number }}\nSPACE_NUMBER=${{ github.event.client_payload.space_number }}\nTIME_TO_SCHEDULE_PARKING=${{ github.event.client_payload.time }}" > /tmp/ppprk_run_file
 
       - name: Insert run file into bucket
-        run: ./docker-compose run --rm aws s3 cp /tmp/ppprk_run_file s3://${{ secrets.queue_bucket }}
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp /tmp/ppprk_run_file s3://${{ secrets.queue_bucket }}
 
   pay_for_parking_scheduled:
     name: Pay for parking per a schedule
