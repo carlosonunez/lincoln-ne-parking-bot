@@ -62,7 +62,7 @@ class ParkingBot
     @session.fill_in('regPhoneNo', with: phone_number)
     wait_for! { @session.has_button? 'Text Me' }
     @session.click_button('Text Me')
-    @session.save_screenshot('dummy_screenshot_to_make_this_work.png')
+    sleep 1
     wait_for! { @session.has_button? 'Yes' }
     @session.click_button('Yes')
     wait_for! { @session.has_field? 'verificationCode' }
@@ -92,7 +92,6 @@ class ParkingBot
   end
 
   def provide_pin(pin)
-    @session.save_screenshot('dummy_screenshot_to_make_this_work.png')
     wait_for! { @session.has_field? 'pin' }
     @session.fill_in('pin', with: pin)
     @session.click_button('Sign In')
@@ -109,7 +108,6 @@ class ParkingBot
   end
 
   def provide_zone(zone)
-    @session.save_screenshot('dummy_screenshot_to_make_this_work.png')
     wait_for! { @session.has_field? 'zoneNumber' }
     @session.fill_in('zoneNumber', with: zone)
     @session.click_button('Continue')
@@ -119,7 +117,6 @@ class ParkingBot
   end
 
   def provide_space(space)
-    @session.save_screenshot('dummy_screenshot_to_make_this_work.png')
     wait_for! { @session.has_field? 'spaceNumber' }
     @session.fill_in('spaceNumber', with: space)
     @session.click_button('Next')
