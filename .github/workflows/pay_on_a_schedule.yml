@@ -83,6 +83,7 @@ jobs:
              then
                echo "::error No run file found. Halting.";
                echo "::set-env name=scheduled_parking_file_found::1";
+               echo "::set-env name=continue_parking::1";
              else
                echo "::set-env name=scheduled_parking_file_found::0";
              fi
