@@ -55,5 +55,12 @@ jobs:
               space_number=${{ github.event.client_payload.space_number }} && 
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking-bot || true
 
-      - name: Send screenshots to AWS S3
-        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp --recursive screenshots s3://${{ secrets.queue_bucket }}/
+      - name: Zip up screenshots taken
+        run: zip -r screenshots.zip screenshots/
+
+      - name: Send screenshots to GitHub Actions
+        uses: actions/upload-artifact@v1
+        with:
+          name: parking-bot-debug-screenshots
+          path: screenshots.zip
+
