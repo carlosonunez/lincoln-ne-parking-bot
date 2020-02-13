@@ -37,6 +37,10 @@ jobs:
                echo "::set-env name=scheduled_parking_file_found::0";
              fi
 
+      - name: Delete parking run from queue bucket
+        if: env.scheduled_parking_file_found == 0
+        run: ./docker-compose run --rm aws s3 rm s3://${{ secrets.queue_bucket }}/ppprk_run_file
+
       - name: Check if current time exceeds desired time to park (if scheduled)
         if: env.scheduled_parking_file_found == 0
         run: current_time=$(date +%s); 
@@ -69,10 +73,6 @@ jobs:
       - name: Turn everything down
         if: env.continue_parking == 0
         run: ./docker-compose down
-
-      - name: Delete parking run from queue bucket
-        if: env.continue_parking == 0
-        run: ./docker-compose run --rm aws s3 rm s3://${{ secrets.queue_bucket }}/ppprk_run_file
 
       - name: Purge the queue when done
         if: env.continue_parking == 0
