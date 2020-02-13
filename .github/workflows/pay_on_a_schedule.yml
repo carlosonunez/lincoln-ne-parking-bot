@@ -1,5 +1,5 @@
 ---
-name: Scheduled parking payments
+name: Scheduled parking payments runner
 on:
   schedule:
     - cron: "*/5 * * * *"

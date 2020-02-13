@@ -1,4 +1,4 @@
-name: Scheduled parking payments
+name: Scheduling parking payments
 on:
   repository_dispatch:
     types:
