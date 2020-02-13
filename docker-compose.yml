@@ -36,7 +36,7 @@ services:
     ports:
       - 4444:4444
       - 5900:5900
-  parking-bot:
+  parking_bot:
     extends: ruby
     env_file: .env
     command: bin/parking_bot.rb
