@@ -19,6 +19,7 @@ class ParkingBot
       ).messages
       desired_message = messages.first
       return nil if desired_message.nil?
+
       message_body = desired_message.body
       @client.delete_message(
         queue_url: queue_url,
