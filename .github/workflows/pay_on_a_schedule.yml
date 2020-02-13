@@ -81,11 +81,14 @@ jobs:
       - name: Stop if run file wasn't downloaded
         run: if [ ! -f ppprk_run_file ];
              then
-               echo "::error:No run file found. Halting.";
-               echo "::set-env name=continue_parking::1";
+               echo "::error No run file found. Halting.";
+               echo "::set-env name=scheduled_parking_file_found::1";
+             else
+               echo "::set-env name=scheduled_parking_file_found::0";
              fi
 
       - name: Check if current time exceeds desired time to park (if scheduled)
+        if: env.scheduled_parking_file_found == 0
         run: current_time=$(date +%s); 
              desired_time=$(cat ppprk_run_file | 
                 egrep '^TIME_TO_SCHEDULE_PARKING=' | 
