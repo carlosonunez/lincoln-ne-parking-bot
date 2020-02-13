@@ -42,7 +42,7 @@ class ParkingBot
 
   def wait_for!(&block)
     iterations = 0
-    until iterations == (ENV['TIMEOUT_SECONDS'] || 15)
+    until iterations == (ENV['TIMEOUT_SECONDS'] || 30)
       return if block.call == true
 
       sleep 1
