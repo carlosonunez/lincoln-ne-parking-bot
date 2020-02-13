@@ -3,8 +3,6 @@ on:
   repository_dispatch:
     types:
       - schedule
-  schedule:
-    - cron: "*/5 * * * *"
 
 # Apologies for the violation of DRY here. GitHub Actions didn't support
 # reusable steps (unless you wanted to write JavaScript to do it, which...no).
