@@ -47,4 +47,4 @@ jobs:
         run: ./docker-compose up -d selenium && 
               zone_number=${{ github.event.client_payload.zone_number }} && 
               space_number=${{ github.event.client_payload.space_number }} && 
-              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking-bot
+              docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking_bot
