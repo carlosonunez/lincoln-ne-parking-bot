@@ -5,7 +5,7 @@ ARG ENVIRONMENT
 RUN apk add --no-cache ruby-nokogiri ruby-dev build-base libxml2-dev libxslt-dev libffi-dev
 
 COPY Gemfile /
-RUN bundle install --jobs=10
+RUN echo "Installing gems..." && bundle install --jobs=10 1>/dev/null
 COPY . /app
 WORKDIR /app
 
