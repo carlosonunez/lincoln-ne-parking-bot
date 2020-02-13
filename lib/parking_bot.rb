@@ -62,7 +62,6 @@ class ParkingBot
     @session.fill_in('regPhoneNo', with: phone_number)
     wait_for! { @session.has_button? 'Text Me' }
     @session.click_button('Text Me')
-    sleep 1
     wait_for! { @session.has_button? 'Yes' }
     @session.click_button('Yes')
     wait_for! { @session.has_field? 'verificationCode' }
