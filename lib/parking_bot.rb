@@ -62,7 +62,6 @@ class ParkingBot
     @session.fill_in('regPhoneNo', with: phone_number)
     wait_for! { @session.has_button? 'Text Me' }
     @session.click_button('Text Me')
-    require 'pry'; binding.pry
     @session.save_screenshot '/screenshots/phone_number.png'
     @session.click_button('Yes')
     wait_for! { @session.has_field? 'verificationCode' }

@@ -56,4 +56,4 @@ jobs:
               docker-compose run --rm -e ZONE_NUMBER=$zone_number -e SPACE_NUMBER=$space_number parking-bot || true
 
       - name: Send screenshots to AWS S3
-        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp --recursive /screenshots s3://{{ secrets.queue_bucket }}/
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp --recursive /screenshots s3://${{ secrets.queue_bucket }}/
