@@ -51,7 +51,7 @@ jobs:
              fi
 
       - name: Create run file
-        run: echo "ZONE_NUMBER=${{ github.event.client_payload.zone_number }}\nSPACE_NUMBER=${{ github.event.client_payload.space_number }}\nTIME_TO_SCHEDULE_PARKING=${{ github.event.client_payload.time }}" > ppprk_run_file
+        run: echo -e "ZONE_NUMBER=${{ github.event.client_payload.zone_number }}\nSPACE_NUMBER=${{ github.event.client_payload.space_number }}\nTIME_TO_SCHEDULE_PARKING=${{ github.event.client_payload.time }}" > ppprk_run_file
 
       - name: Insert run file into bucket
         run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp ppprk_run_file s3://${{ secrets.queue_bucket }}

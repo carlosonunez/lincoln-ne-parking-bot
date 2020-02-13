@@ -42,10 +42,14 @@ jobs:
         run: current_time=$(date +%s); 
              desired_time=$(cat ppprk_run_file | 
                 egrep '^TIME_TO_SCHEDULE_PARKING=' | 
-                cut -f2 -d '='); 
-             if [ "$current_time" -lt "$desired_time" ];
+                cut -f2 -d '=');
+             if [ -z "$desired_time" ];
              then
-               echo "::error We're scheduled to run at $(date -d $desired_time), but it's $(date -d $current_time). Halting until go time.";
+               echo "::error No desired time found in run file.";
+               echo "::set-env name=continue_parking::1";
+             elif [ "$current_time" -lt "$desired_time" ];
+             then
+               echo "::error We're scheduled to run at $(date -d @$desired_time), but it's $(date -d @$current_time). Halting until go time.";
                echo "::set-env name=continue_parking::1";
              fi
 
