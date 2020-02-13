@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 TEST_TYPE="${TEST_TYPE:-unit}"
+docker-compose build --parallel lint "$TEST_TYPE"
 docker-compose up -d sqs selenium
 docker-compose run --rm lint
 docker-compose run --rm "$TEST_TYPE" $*

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+docker-compose build integration &&
 docker-compose up -d selenium &&
 docker-compose run --rm integration
 docker-compose down

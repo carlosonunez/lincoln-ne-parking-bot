@@ -1,9 +1,8 @@
-FROM lambci/lambda:build-ruby2.5
+FROM ruby:2.5-alpine
 MAINTAINER Carlos Nunez <dev@carlosnunez.me>
 ARG ENVIRONMENT
 
-RUN yum install -y ruby25-devel gcc libxml2 libxml2-devel \
-  libxslt libxslt-devel patch curl
+RUN apk add --no-cache ruby-nokogiri ruby-dev build-base libxml2-dev libxslt-dev libffi-dev
 
 COPY Gemfile /
 RUN bundle install
