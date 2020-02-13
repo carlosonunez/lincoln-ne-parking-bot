@@ -64,8 +64,6 @@ class ParkingBot
     @session.click_button('Text Me')
     @session.click_button('Yes')
     wait_for! { @session.has_field? 'verificationCode' }
-  rescue StandardError
-    raise 'Failed to provide phone number'
   end
 
   def fetch_latest_code
@@ -80,13 +78,15 @@ class ParkingBot
   end
 
   def submit_verification_code(code)
-    @session.fill_in('verificationCode', with: code)
-    wait_for! { @session.has_button? 'Verify' }
-    @session.click_button('Verify')
+    begin
+      @session.fill_in('verificationCode', with: code)
+      wait_for! { @session.has_button? 'Verify' }
+      @session.click_button('Verify')
+    rescue StandardError
+      raise 'Failed to provide verification code or verification code incorrect.'
+    end
     wait_for! { @session.has_button? 'Ok' }
     @session.click_button('Ok')
-  rescue StandardError
-    raise 'Failed to provide verification code or verification code incorrect.'
   end
 
   def provide_pin(pin)
@@ -94,8 +94,6 @@ class ParkingBot
     @session.fill_in('pin', with: pin)
     @session.click_button('Sign In')
     raise 'PIN not valid' if @session.has_text?(Constants::Errors::INVALID_PIN)
-  rescue StandardError
-    raise 'Something went wrong'
   end
 
   def find_code_in_email(encoded_email)
