@@ -25,7 +25,7 @@ jobs:
           ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
 
       - name: Check for and download run file
-        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file || true
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp s3://${{ secrets.queue_bucket }}/ppprk_run_file ./ppprk_run_file || true
 
       - name: Stop if run file wasn't downloaded
         run: if [ ! -f ppprk_run_file ];
