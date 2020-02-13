@@ -1,0 +1,57 @@
+name: Scheduled parking payments
+on:
+  repository_dispatch:
+    types:
+      - schedule
+  schedule:
+    - cron: "*/5 * * * *"
+
+# Apologies for the violation of DRY here. GitHub Actions didn't support
+# reusable steps (unless you wanted to write JavaScript to do it, which...no).
+jobs:
+  schedule_new_parking_payment:
+    runs-on: [ubuntu-latest]
+    name: Schedule a parking payment
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Docker Compose
+        run: curl -L ${DOCKER_COMPOSE_URL}/docker-compose-`uname -s`-`uname -m` > ./docker-compose &&
+             chmod +x ./docker-compose
+        env:
+          DOCKER_COMPOSE_URL: https://github.com/docker/compose/releases/download/1.22.0
+
+      - name: Decrypt environment file
+        run: ./docker-compose -f docker-compose.ci.yml run --rm decrypt-env
+        env:
+          ENV_PASSWORD: ${{ secrets.env_file_encryption_key }}
+
+      - name: Create queue bucket (if it doesn't exist)
+        run: ./docker-compose run --rm aws s3 mb s3://${{ secrets.queue_bucket }} || true
+
+      - name: Check for zone number
+        run: if [ -z "${{ github.event.client_payload.zone_number }}" ];
+             then
+              echo "::error Please provide a zone_number in client_payload.";
+              exit 1;
+             fi
+
+      - name: Check for space number
+        run: if [ -z "${{ github.event.client_payload.space_number }}" ];
+             then
+              echo "::error Please provide a zone_number in client_payload.";
+              exit 1;
+             fi
+
+      - name: Check for time to schedule parking
+        run: if [ -z "${{ github.event.client_payload.time }}" ];
+             then
+              echo "::error Please provide a time in client_payload.";
+              exit 1;
+             fi
+
+      - name: Create run file
+        run: echo "ZONE_NUMBER=${{ github.event.client_payload.zone_number }}\nSPACE_NUMBER=${{ github.event.client_payload.space_number }}\nTIME_TO_SCHEDULE_PARKING=${{ github.event.client_payload.time }}" > /tmp/ppprk_run_file
+
+      - name: Insert run file into bucket
+        run: ./docker-compose -f docker-compose.deploy.yml run --rm aws s3 cp /tmp/ppprk_run_file s3://${{ secrets.queue_bucket }}
