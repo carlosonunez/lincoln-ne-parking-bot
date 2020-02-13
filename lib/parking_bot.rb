@@ -62,7 +62,7 @@ class ParkingBot
     @session.fill_in('regPhoneNo', with: phone_number)
     wait_for! { @session.has_button? 'Text Me' }
     @session.click_button('Text Me')
-    @session.save_screenshot '/screenshots/phone_number.png'
+    wait_for! { @session.has_button? 'Yes' }
     @session.click_button('Yes')
     wait_for! { @session.has_field? 'verificationCode' }
   end
@@ -125,26 +125,24 @@ class ParkingBot
   end
 
   def choose_max_parking_time!
-    wait_for! { @session.has_button? 'Max Purchase' }
-    raise 'No maximum purchase option available.' \
-      unless @session.has_button?('Max Purchase')
-
+    begin
+      wait_for! { @session.has_button? 'Max Purchase' }
+    rescue StandardError
+      raise "It doesn't seem that we can select 'Max Purchase'"
+    end
     @session.click_button('Max Purchase')
-    raise 'Unable to select parking time' \
-      unless @session.has_button?('Add Card')
+    wait_for! { @session.has_button?('Add Card') }
   end
 
   def pay!(card:)
-    raise "No card exists matching '#{card}'" \
-      unless @session.has_button?(card)
-
+    begin
+      wait_for! { session.has_button?(card) }
+    rescue StandardError
+      raise 'The card provided was not found. Did you set it up manually?'
+    end
     @session.click_button(card)
-    wait_for! { session.has_text? 'Please Confirm' }
-    raise 'Unable to verify the payment' \
-      unless @session.has_text?('Please Confirm')
-
     wait_for! { session.has_button? 'Yes' }
     @session.click_button('Yes')
-    raise 'Unable to pay' unless @session.has_text?('You are parked!')
+    wait_for! { session.has_text? 'You are parked!' }
   end
 end
